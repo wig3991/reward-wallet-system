@@ -1,0 +1,37 @@
+{
+  "Version": 1,
+  "WorkspaceRootPath": "D:\\PTIT\\Ngon_ngu_lap_trinh_C\u002B\u002B\\RewardWalletSystem\\RewardWalletSystem\\",
+  "Documents": [
+    {
+      "AbsoluteMoniker": "D:0:0:{98DDCFF6-F49D-4346-914B-1E0A25D11133}|RewardWalletSystem.vcxproj|D:\\PTIT\\Ngon_ngu_lap_trinh_C\u002B\u002B\\RewardWalletSystem\\RewardWalletSystem\\RewardWalletSystem.cpp||{D0E1A5C6-B359-4E41-9B60-3365922C2A22}",
+      "RelativeMoniker": "D:0:0:{98DDCFF6-F49D-4346-914B-1E0A25D11133}|RewardWalletSystem.vcxproj|solutionrelative:RewardWalletSystem.cpp||{D0E1A5C6-B359-4E41-9B60-3365922C2A22}"
+    }
+  ],
+  "DocumentGroupContainers": [
+    {
+      "Orientation": 0,
+      "VerticalTabListWidth": 256,
+      "DocumentGroups": [
+        {
+          "DockedWidth": 200,
+          "SelectedChildIndex": 0,
+          "Children": [
+            {
+              "$type": "Document",
+              "DocumentIndex": 0,
+              "Title": "RewardWalletSystem.cpp",
+              "DocumentMoniker": "D:\\PTIT\\Ngon_ngu_lap_trinh_C\u002B\u002B\\RewardWalletSystem\\RewardWalletSystem\\RewardWalletSystem.cpp",
+              "RelativeDocumentMoniker": "RewardWalletSystem.cpp",
+              "ToolTip": "D:\\PTIT\\Ngon_ngu_lap_trinh_C\u002B\u002B\\RewardWalletSystem\\RewardWalletSystem\\RewardWalletSystem.cpp",
+              "RelativeToolTip": "RewardWalletSystem.cpp",
+              "ViewState": "AgIAAPoBAAAAAAAAAAAIwAUCAAAJAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000677|",
+              "WhenOpened": "2025-06-08T01:53:08.825Z",
+              "EditorCaption": ""
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

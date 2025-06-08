@@ -1,0 +1,12 @@
+﻿  RewardWalletSystem.cpp
+D:\PTIT\Ngon_ngu_lap_trinh_C++\RewardWalletSystem\RewardWalletSystem\RewardWalletSystem.cpp(308,15): warning C4244: 'argument': conversion from 'time_t' to 'unsigned int', possible loss of data
+D:\PTIT\Ngon_ngu_lap_trinh_C++\RewardWalletSystem\RewardWalletSystem\RewardWalletSystem.cpp(421,20): warning C4267: 'initializing': conversion from 'size_t' to 'int', possible loss of data
+D:\PTIT\Ngon_ngu_lap_trinh_C++\RewardWalletSystem\RewardWalletSystem\RewardWalletSystem.cpp(582,23): warning C4244: 'argument': conversion from 'time_t' to 'unsigned int', possible loss of data
+D:\PTIT\Ngon_ngu_lap_trinh_C++\RewardWalletSystem\RewardWalletSystem\RewardWalletSystem.cpp(632,15): warning C4244: 'argument': conversion from 'time_t' to 'unsigned int', possible loss of data
+D:\PTIT\Ngon_ngu_lap_trinh_C++\RewardWalletSystem\RewardWalletSystem\RewardWalletSystem.cpp(699,15): warning C4244: 'argument': conversion from 'time_t' to 'unsigned int', possible loss of data
+D:\PTIT\Ngon_ngu_lap_trinh_C++\RewardWalletSystem\RewardWalletSystem\RewardWalletSystem.cpp(960,15): warning C4244: 'argument': conversion from 'time_t' to 'unsigned int', possible loss of data
+  Generating code
+  Previous IPDB not found, fall back to full compilation.
+  All 595 functions were compiled because no usable IPDB/IOBJ from previous compilation was found.
+  Finished generating code
+  RewardWalletSystem.vcxproj -> D:\PTIT\Ngon_ngu_lap_trinh_C++\RewardWalletSystem\RewardWalletSystem\x64\Release\RewardWalletSystem.exe
