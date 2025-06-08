@@ -888,3 +888,224 @@ void editUserInfo(const string& editorUsername, const string& editorRole) {
 
     cout << "[OK] User information updated successfully.\n";
 }
+
+PendingUpdate requestUserInfoUpdateByAdmin() {
+    string username;
+    cout << "\n=== Admin: Request Info Update for User ===\n";
+    cout << "Enter the username to update: ";
+    cin >> username;
+
+    // Đọc danh sách người dùng
+    ifstream file("users.txt");
+    if (!file.is_open()) {
+        cout << "[ERROR] Cannot open user file.\n";
+        return {};
+    }
+
+    vector<User> users;
+    string line;
+    User* targetUser = nullptr;
+
+    while (getline(file, line)) {
+        vector<string> fields;
+        size_t pos;
+        string temp = line;
+        while ((pos = temp.find(',')) != string::npos) {
+            fields.push_back(temp.substr(0, pos));
+            temp.erase(0, pos + 1);
+        }
+        fields.push_back(temp);
+        if (fields.size() < 7) continue;
+
+        User u(fields[0], fields[1], fields[2], fields[3], fields[4] == "true", fields[5], fields[6]);
+
+        if (u.username == username) {
+            users.push_back(u); // copy target to list
+            targetUser = &users.back();
+        }
+        else {
+            users.push_back(u);
+        }
+    }
+    file.close();
+
+    if (!targetUser) {
+        cout << "[ERROR] User not found.\n";
+        return {};
+    }
+
+    PendingUpdate pending;
+    pending.username = username;
+    pending.oldFullName = targetUser->fullName;
+    pending.oldEmail = targetUser->email;
+    pending.oldDob = targetUser->dob;
+    pending.requestedBy = "admin";
+
+    string input;
+    cin.ignore();
+
+    cout << "Current full name: " << targetUser->fullName << "\nNew full name (leave blank to skip): ";
+    getline(cin, input);
+    pending.newFullName = input.empty() ? targetUser->fullName : input;
+
+    cout << "Current email: " << targetUser->email << "\nNew email (leave blank to skip): ";
+    getline(cin, input);
+    pending.newEmail = input.empty() ? targetUser->email : input;
+
+    cout << "Current DOB: " << targetUser->dob << "\nNew DOB (leave blank to skip): ";
+    getline(cin, input);
+    pending.newDob = input.empty() ? targetUser->dob : input;
+
+    // Sinh OTP
+    srand(time(0));
+    pending.otpCode = generateOTP(6);
+
+    // Hiển thị thông tin xác nhận
+    cout << "\n[SUMMARY] === Confirmation Summary ===\n";
+    if (pending.oldFullName != pending.newFullName)
+        cout << "Full Name: " << pending.oldFullName << " to " << pending.newFullName << "\n";
+    if (pending.oldEmail != pending.newEmail)
+        cout << "Email    : " << pending.oldEmail << " to " << pending.newEmail << "\n";
+    if (pending.oldDob != pending.newDob)
+        cout << "DOB      : " << pending.oldDob << " to " << pending.newDob << "\n";
+
+    cout << "\n[OTP] OTP for user verification: " << pending.otpCode << "\n";
+    cout << "Ask the user to confirm with this OTP to apply changes.\n";
+
+    return pending;
+}
+
+void confirmPendingUpdate(const PendingUpdate& pending) {
+    string inputOTP;
+    cout << "\n=== User Confirmation Required ===\n";
+    cout << "Enter OTP sent to you: ";
+    cin >> inputOTP;
+
+    if (inputOTP != pending.otpCode) {
+        cout << "[ERROR] Invalid OTP. Update canceled.\n";
+        return;
+    }
+
+    // Đọc danh sách người dùng và cập nhật
+    ifstream file("users.txt");
+    if (!file.is_open()) {
+        cout << "[ERROR] Cannot open user file.\n";
+        return;
+    }
+
+    vector<User> users;
+    string line;
+
+    while (getline(file, line)) {
+        vector<string> fields;
+        size_t pos;
+        string temp = line;
+        while ((pos = temp.find(',')) != string::npos) {
+            fields.push_back(temp.substr(0, pos));
+            temp.erase(0, pos + 1);
+        }
+        fields.push_back(temp);
+        if (fields.size() < 7) continue;
+
+        User u(fields[0], fields[1], fields[2], fields[3], fields[4] == "true", fields[5], fields[6]);
+
+        if (u.username == pending.username) {
+            if (u.fullName != pending.newFullName) {
+                logUserChange(pending.requestedBy, u.username, "fullName", u.fullName, pending.newFullName);
+                u.fullName = pending.newFullName;
+            }
+            if (u.email != pending.newEmail) {
+                logUserChange(pending.requestedBy, u.username, "email", u.email, pending.newEmail);
+                u.email = pending.newEmail;
+            }
+            if (u.dob != pending.newDob) {
+                logUserChange(pending.requestedBy, u.username, "dob", u.dob, pending.newDob);
+                u.dob = pending.newDob;
+            }
+        }
+
+        users.push_back(u);
+    }
+    file.close();
+
+    // Ghi lại danh sách đã cập nhật
+    ofstream out("users.txt");
+    for (const User& u : users) {
+        out << u.username << "," << u.password << "," << u.fullName << ","
+            << u.role << "," << (u.isFirstLogin ? "true" : "false") << ","
+            << u.email << "," << u.dob << "\n";
+    }
+    out.close();
+
+    cout << "[OK] Changes applied successfully after OTP confirmation.\n";
+}
+
+bool masterWalletExists() {
+    ifstream file("wallets.txt");
+    string line;
+    while (getline(file, line)) {
+        if (line.find("__master__,") == 0) return true;
+    }
+    return false;
+}
+
+
+bool transfer(const string& from, const string& to, int amount) {
+    if (amount <= 0) {
+        cout << "[ERROR] Invalid amount.\n";
+        return false;
+    }
+
+    // Đọc ví
+    vector<Wallet> wallets;
+    ifstream file("wallets.txt");
+    if (!file.is_open()) {
+        cout << "[ERROR] Cannot open wallet file.\n";
+        return false;
+    }
+
+    string line;
+    while (getline(file, line)) {
+        size_t pos = line.find(',');
+        string id = line.substr(0, pos);
+        int bal = stoi(line.substr(pos + 1));
+        wallets.push_back(Wallet(id, bal));
+    }
+    file.close();
+
+    // Tìm vị trí ví
+    int fromIndex = -1, toIndex = -1;
+    for (int i = 0; i < wallets.size(); ++i) {
+        if (wallets[i].walletID == from) fromIndex = i;
+        if (wallets[i].walletID == to) toIndex = i;
+    }
+
+    if (fromIndex == -1 || toIndex == -1) {
+        cout << "[ERROR] Wallet not found.\n";
+        return false;
+    }
+
+    if (wallets[fromIndex].balance < amount) {
+        cout << "[ERROR] Insufficient balance in source wallet.\n";
+        return false;
+    }
+
+    // Thực hiện chuyển điểm
+    wallets[fromIndex].balance -= amount;
+    wallets[toIndex].balance += amount;
+
+    // Ghi file
+    ofstream out("wallets.txt");
+    if (!out.is_open()) {
+        cout << "[ERROR] Cannot write wallet file.\n";
+        return false;
+    }
+    for (const Wallet& w : wallets) {
+        out << w.walletID << "," << w.balance << "\n";
+    }
+    out.close();
+
+    // Ghi log
+    saveTransactionLog(from, to, amount);
+    return true;
+}
