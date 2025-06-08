@@ -530,3 +530,361 @@ string generateOTP(int length) {
     }
     return otp;
 }
+// Hàm thay đổi mật khẩu
+void changePassword(const string& username) {
+    string oldPassword, newPassword, confirmPassword;
+
+    ifstream file("users.txt");
+    if (!file.is_open()) {
+        cout << "Error opening user file.\n";
+        return;
+    }
+
+    vector<User> users;
+    string line;
+    bool found = false;
+
+    while (getline(file, line)) {
+        vector<string> fields;
+        size_t pos = 0;
+        string temp = line;
+        while ((pos = temp.find(',')) != string::npos) {
+            fields.push_back(temp.substr(0, pos));
+            temp.erase(0, pos + 1);
+        }
+        fields.push_back(temp); // last field
+
+        if (fields.size() < 7) continue;
+
+        User u(fields[0], fields[1], fields[2], fields[3], fields[4] == "true", fields[5], fields[6]);
+
+        if (u.username == username) {
+            cout << "Enter your old password: ";
+            cin >> oldPassword;
+            if (hashPassword(oldPassword) != u.password) {
+                cout << "[ERROR] Incorrect old password.\n";
+                file.close();
+                return;
+            }
+
+            cout << "Enter new password: ";
+            cin >> newPassword;
+            cout << "Confirm new password: ";
+            cin >> confirmPassword;
+
+            if (newPassword != confirmPassword) {
+                cout << "[ERROR] Passwords do not match.\n";
+                file.close();
+                return;
+            }
+
+            // [OK] Xác minh OTP
+            srand(time(0)); // Khởi tạo ngẫu nhiên
+            string otp = generateOTP(6);
+            cout << "\nAn OTP has been sent to your phone (simulated): " << otp << "\n";
+
+            string inputOTP;
+            cout << "Enter OTP to confirm password change: ";
+            cin >> inputOTP;
+
+            if (inputOTP != otp) {
+                cout << "[ERROR] Incorrect OTP. Password change cancelled.\n";
+                file.close();
+                return;
+            }
+
+            u.password = hashPassword(newPassword);
+            u.isFirstLogin = false;
+            found = true;
+        }
+
+        users.push_back(u);
+    }
+    file.close();
+
+    if (!found) {
+        cout << "[ERROR] User not found.\n";
+        return;
+    }
+
+    ofstream out("users.txt");
+    if (!out.is_open()) {
+        cout << "Error writing user file.\n";
+        return;
+    }
+
+    for (const User& u : users) {
+        out << u.username << "," << u.password << "," << u.fullName << ","
+            << u.role << "," << (u.isFirstLogin ? "true" : "false") << ","
+            << u.email << "," << u.dob << "\n";
+    }
+    out.close();
+
+    cout << "[OK] Password changed successfully with OTP verification.\n";
+}
+
+
+
+// Hàm sinh mật khẩu ngẫu nhiên
+string generateRandomPassword(int length) {
+    const string characters = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#$%^&*()";
+    string password = "";
+    srand(time(0));  // Khởi tạo số ngẫu nhiên
+    for (int i = 0; i < length; ++i) {
+        password += characters[rand() % characters.length()];
+    }
+    return password;
+}
+// Thêm mật khẩu ngẫu nhiên vào phần tạo tài khoản của admin
+// Thêm email và ngày sinh vào hàm tạo tài khoản của admin
+void createAccountForUser() {
+    string username, fullname, email, dob;
+
+    cout << "\n=== Create Account for User ===\n";
+    cout << "Enter username: ";
+    cin >> username;
+    cout << "Enter full name: ";
+    cin.ignore();
+    getline(cin, fullname);
+
+    cout << "Enter email: ";
+    getline(cin, email);
+    cout << "Enter date of birth (DD/MM/YYYY): ";
+    getline(cin, dob);
+
+    // Sinh mật khẩu ngẫu nhiên
+    string randomPassword = generateRandomPassword(10);
+    cout << "Generated password for the user: " << randomPassword << endl;
+
+    // Hash và lưu người dùng
+    string hashed = hashPassword(randomPassword);
+    User newUser(username, hashed, fullname, "user", true, email, dob);
+    saveUserToFile(newUser);
+
+    // Tạo ví với 0 điểm ban đầu
+    ofstream wf("wallets.txt", ios::app);
+    if (wf.is_open()) {
+        wf << username << ",0\n";
+        wf.close();
+    }
+    else {
+        cout << "[ERROR] Failed to create wallet.\n";
+        return;
+    }
+
+    // Chuyển 100 điểm từ master
+    if (!transfer("__master__", username, 100)) {
+        cout << "[ERROR] Failed to fund user wallet. Please check master balance.\n";
+        return;
+    }
+
+    cout << "[OK] Wallet created and funded from master wallet.\n";
+    cout << "Please notify the user to log in using the following password: " << randomPassword << endl;
+}
+
+
+// Hàm nạp điểm
+void addPoints(const string& username) {
+    int amount;
+    cout << "=== Add Points ===\n";
+    cout << "Enter the amount of points to add: ";
+    cin >> amount;
+
+    if (amount <= 0) {
+        cout << "[ERROR] Amount must be greater than 0.\n";
+        return;
+    }
+
+    // Xác nhận OTP
+    srand(time(0));
+    string otp = generateOTP(6);
+    cout << "\nOTP has been sent to your phone (simulated): " << otp << "\n";
+
+    string userInput;
+    cout << "Enter OTP to confirm transaction: ";
+    cin >> userInput;
+
+    if (userInput != otp) {
+        cout << "[ERROR] Invalid OTP. Transaction cancelled.\n";
+        return;
+    }
+
+    // Bước 1: cộng điểm vào master wallet (mô phỏng nạp từ ngoài)
+    vector<Wallet> wallets;
+    ifstream file("wallets.txt");
+    if (!file.is_open()) {
+        cout << "[ERROR] Cannot open wallet file.\n";
+        return;
+    }
+
+    string line;
+    while (getline(file, line)) {
+        size_t pos = line.find(',');
+        string id = line.substr(0, pos);
+        int bal = stoi(line.substr(pos + 1));
+        wallets.push_back(Wallet(id, bal));
+    }
+    file.close();
+
+    // Tìm ví tổng
+    int masterIndex = -1;
+    for (int i = 0; i < wallets.size(); ++i) {
+        if (wallets[i].walletID == "__master__") {
+            masterIndex = i;
+            break;
+        }
+    }
+
+    if (masterIndex == -1) {
+        cout << "[ERROR] Master wallet not found.\n";
+        return;
+    }
+
+    wallets[masterIndex].balance += amount;  // Ghi nhận nạp hệ thống
+
+    // Ghi lại wallets.txt
+    ofstream outFile("wallets.txt");
+    for (const Wallet& w : wallets) {
+        outFile << w.walletID << "," << w.balance << "\n";
+    }
+    outFile.close();
+
+    saveTransactionLog("System", "__master__", amount);  // Ghi log nạp vào hệ thống
+
+    // Bước 2: chuyển từ master sang người dùng
+    if (!transfer("__master__", username, amount)) {
+        cout << "[ERROR] Failed to transfer from master to user.\n";
+        return;
+    }
+
+    cout << "[OK] Points successfully added to your wallet.\n";
+}
+
+
+
+string hashPassword(const string& password) {
+    return picosha2::hash256_hex_string(password);
+}
+
+
+void logUserChange(const string& editor, const string& targetUser, const string& field, const string& oldVal, const string& newVal) {
+    ofstream log("user_changes.log", ios::app);
+    if (!log.is_open()) return;
+
+    time_t now = time(0);
+    tm ltm;
+    localtime_s(&ltm, &now);
+    char timestamp[20];
+    strftime(timestamp, sizeof(timestamp), "%Y-%m-%d %H:%M:%S", &ltm);
+
+    log << "[" << timestamp << "] " << editor << " changed '" << field
+        << "' of user '" << targetUser << "' from '" << oldVal << "' to '" << newVal << "'\n";
+    log.close();
+}
+
+
+void editUserInfo(const string& editorUsername, const string& editorRole) {
+    string targetUsername;
+
+    if (editorRole == "admin") {
+        cout << "\n=== Admin: Edit User Information ===\n";
+        cout << "Enter username of the user to edit: ";
+        cin >> targetUsername;
+    }
+    else {
+        // User chỉ được sửa thông tin chính mình
+        targetUsername = editorUsername;
+        cout << "\n=== Edit Your Information ===\n";
+    }
+
+    // Đọc danh sách người dùng
+    ifstream inFile("users.txt");
+    if (!inFile.is_open()) {
+        cout << "[ERROR] Cannot open user file.\n";
+        return;
+    }
+
+    vector<User> users;
+    string line;
+    bool found = false;
+
+    while (getline(inFile, line)) {
+        vector<string> fields;
+        string temp = line;
+        size_t pos;
+        while ((pos = temp.find(',')) != string::npos) {
+            fields.push_back(temp.substr(0, pos));
+            temp.erase(0, pos + 1);
+        }
+        fields.push_back(temp);
+
+        if (fields.size() < 7) continue;
+
+        User u(fields[0], fields[1], fields[2], fields[3], fields[4] == "true", fields[5], fields[6]);
+
+        if (u.username == targetUsername) {
+            found = true;
+            string input;
+
+            // fullName
+            cout << "Current full name: " << u.fullName << "\nNew full name (leave blank to skip): ";
+            cin.ignore();
+            getline(cin, input);
+            if (!input.empty()) {
+                logUserChange(editorUsername, u.username, "fullName", u.fullName, input);
+                u.fullName = input;
+            }
+
+            // email
+            cout << "Current email: " << u.email << "\nNew email (leave blank to skip): ";
+            getline(cin, input);
+            if (!input.empty()) {
+                logUserChange(editorUsername, u.username, "email", u.email, input);
+                u.email = input;
+            }
+
+            // dob
+            cout << "Current date of birth: " << u.dob << "\nNew date of birth (leave blank to skip): ";
+            getline(cin, input);
+            if (!input.empty()) {
+                logUserChange(editorUsername, u.username, "dob", u.dob, input);
+                u.dob = input;
+            }
+
+            // role (chỉ admin mới chỉnh được)
+            if (editorRole == "admin") {
+                cout << "Current role: " << u.role << "\nNew role (user/admin) (leave blank to skip): ";
+                getline(cin, input);
+                if (!input.empty() && (input == "user" || input == "admin")) {
+                    logUserChange(editorUsername, u.username, "role", u.role, input);
+                    u.role = input;
+                }
+            }
+
+        }
+
+        users.push_back(u);
+    }
+    inFile.close();
+
+    if (!found) {
+        cout << "[ERROR] User not found.\n";
+        return;
+    }
+
+    // Ghi lại danh sách đã cập nhật
+    ofstream outFile("users.txt");
+    if (!outFile.is_open()) {
+        cout << "[ERROR] Cannot write to user file.\n";
+        return;
+    }
+
+    for (const User& u : users) {
+        outFile << u.username << "," << u.password << "," << u.fullName << ","
+            << u.role << "," << (u.isFirstLogin ? "true" : "false") << ","
+            << u.email << "," << u.dob << "\n";
+    }
+    outFile.close();
+
+    cout << "[OK] User information updated successfully.\n";
+}
