@@ -1,0 +1,4 @@
+__master__,999900
+Nhungpac,100
+Minhdt,200
+Khanhlav,5000
