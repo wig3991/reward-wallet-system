@@ -307,7 +307,7 @@ void transferPoints(const string& senderID) {
     // OTP xác thực
     srand(time(0));
     string otp = generateOTP();
-    cout << "\nOTP has been sent to your phone (simulated): " << otp << "\n";
+    cout << "\nOTP has been sent to your email (simulated): " << otp << "\n";
 
     string userInput;
     cout << "Enter OTP to confirm transaction: ";
