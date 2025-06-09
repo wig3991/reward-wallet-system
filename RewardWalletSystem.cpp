@@ -581,7 +581,7 @@ void changePassword(const string& username) {
             // [OK] Xác minh OTP
             srand(time(0)); // Khởi tạo ngẫu nhiên
             string otp = generateOTP(6);
-            cout << "\nAn OTP has been sent to your phone (simulated): " << otp << "\n";
+            cout << "\nAn OTP has been sent to your email (simulated): " << otp << "\n";
 
             string inputOTP;
             cout << "Enter OTP to confirm password change: ";
@@ -698,7 +698,7 @@ void addPoints(const string& username) {
     // Xác nhận OTP
     srand(time(0));
     string otp = generateOTP(6);
-    cout << "\nOTP has been sent to your phone (simulated): " << otp << "\n";
+    cout << "\nOTP has been sent to your email (simulated): " << otp << "\n";
 
     string userInput;
     cout << "Enter OTP to confirm transaction: ";
